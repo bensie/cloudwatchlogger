@@ -1,7 +1,7 @@
-require 'multi_json'
+require 'json'
 require 'socket'
 require 'thread'
-require 'uuid'
+require 'securerandom'
 
 module CloudWatchLogger
   module Client
@@ -39,7 +39,7 @@ module CloudWatchLogger
         proc do |severity, datetime, progname, msg|
           processid=Process.pid
           if @format == :json && msg.is_a?(Hash)
-            MultiJson.dump(msg.merge({ :severity => severity,
+            JSON.dump(msg.merge({ :severity => severity,
                                        :datetime => datetime,
                                        :progname => progname,
                                        :pid      => processid }))
@@ -52,9 +52,9 @@ module CloudWatchLogger
 
       def massage_message(incoming_message, severity, processid)
         outgoing_message = ""
-        
+
         outgoing_message << "pid=#{processid}, thread=#{Thread.current.object_id}, severity=#{severity}, "
-        
+
         case incoming_message
         when Hash
           outgoing_message << masher(incoming_message)
@@ -73,12 +73,11 @@ module CloudWatchLogger
       def setup_log_group_name(name)
         @log_group_name = name
       end
-      
+
       def setup_log_stream_name(name)
         @log_stream_name = name
         if @log_stream_name.nil?
-          uuid = UUID.new
-          @log_stream_name = "#{Socket.gethostname}-#{uuid.generate}"
+          @log_stream_name = "#{Socket.gethostname}-#{SecureRandom.uuid}"
         end
       end
 

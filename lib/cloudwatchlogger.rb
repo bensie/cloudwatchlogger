@@ -1,9 +1,7 @@
 require File.join(File.dirname(__FILE__), 'cloudwatchlogger', 'client')
-
 require 'logger'
 
 module CloudWatchLogger
-
   class LogGroupNameRequired < ArgumentError; end
   class LogEventRejected < ArgumentError; end
 
@@ -19,5 +17,4 @@ module CloudWatchLogger
 
     logger
   end
-
 end
