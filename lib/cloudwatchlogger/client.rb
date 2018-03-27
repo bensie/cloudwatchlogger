@@ -23,7 +23,6 @@ module CloudWatchLogger
             JSON.dump(
               JSON.parse(msg).merge({
                 severity: severity,
-                progname: progname,
                 pid: Process.pid,
                 thread: Thread.current.object_id,
               })
