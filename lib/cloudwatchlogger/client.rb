@@ -15,55 +15,23 @@ module CloudWatchLogger
     end
 
     module InstanceMethods
-
-      def masherize_key(prefix,key)
-        [prefix,key.to_s].compact.join('.')
-      end
-
-      def masher(hash, prefix=nil)
-        hash.map do |v|
-          if v[1].is_a?(Hash)
-            masher(v[1],masherize_key(prefix,v[0]))
-          else
-            "#{masherize_key(prefix,v[0])}=" << case v[1]
-            when Symbol
-              v[1].to_s
-            else
-              v[1].inspect
-            end
-          end
-        end.join(", ")
-      end
-
       def formatter
         proc do |severity, datetime, progname, msg|
-          processid=Process.pid
-          if @format == :json && msg.is_a?(Hash)
-            JSON.dump(msg.merge({ :severity => severity,
-                                       :datetime => datetime,
-                                       :progname => progname,
-                                       :pid      => processid }))
-          else
-            message = "#{datetime} "
-            message << massage_message(msg, severity, processid)
+          # Assume it's stringified Lograge JSON, so append some other goodies
+          # or return the message if it's something else.
+          begin
+            JSON.dump(
+              JSON.parse(msg).merge({
+                severity: severity,
+                progname: progname,
+                pid: Process.pid,
+                thread: Thread.current.object_id,
+              })
+            )
+          rescue
+            msg
           end
         end
-      end
-
-      def massage_message(incoming_message, severity, processid)
-        outgoing_message = ""
-
-        outgoing_message << "pid=#{processid}, thread=#{Thread.current.object_id}, severity=#{severity}, "
-
-        case incoming_message
-        when Hash
-          outgoing_message << masher(incoming_message)
-        when String
-          outgoing_message << incoming_message
-        else
-          outgoing_message << incoming_message.inspect
-        end
-        outgoing_message
       end
 
       def setup_credentials(credentials)
